@@ -30,15 +30,15 @@ public class GameManager : MonoBehaviour
         set => playerid = value;
     }
 
-    public List<Dictionary<string, object>> Npcdata 
-    { 
-        get => npcdata; 
-        set => npcdata = value; 
+    public List<Dictionary<string, object>> Npcdata
+    {
+        get => npcdata;
+        set => npcdata = value;
     }
-    public List<Dictionary<string, object>> Pcdata 
-    { 
-        get => pcdata; 
-        set => pcdata = value; 
+    public List<Dictionary<string, object>> Pcdata
+    {
+        get => pcdata;
+        set => pcdata = value;
     }
 
     private float npcmoney;
@@ -91,7 +91,7 @@ public class GameManager : MonoBehaviour
             instance = this;
 
             DontDestroyOnLoad(this);
-        }
+        }       
 
         //CSV 읽기
         npcdata = CSVReader.Read("NPC_Table");
@@ -113,6 +113,8 @@ public class GameManager : MonoBehaviour
         else
         {
             GameObject.Find("Canvas").transform.Find("MY_Money").GetComponent<Text>().text = PlayerPrefs.GetFloat("Money").ToString();
+
+            playerid = PlayerPrefs.GetInt("PlayerId");
         }
 
     }
@@ -199,10 +201,10 @@ public class GameManager : MonoBehaviour
 
     public bool cardset = false;
     public bool playerblackjack = false;
-    
-    float waittime = 0.3f;
+
+    float waittime = 0.9f;
     public IEnumerator StartBlackJack()
-    {      
+    {
         cardset = false;
 
         playerblackjack = false;
@@ -213,7 +215,7 @@ public class GameManager : MonoBehaviour
 
         CardDeck.GetComponent<CardDeck>().CardDeckStart();
 
-        Player.GetComponent<Player>().GetCard();
+        Player.GetComponent<Player>().GetCard();        
 
         yield return new WaitForSeconds(waittime);
 
@@ -225,7 +227,9 @@ public class GameManager : MonoBehaviour
 
         yield return new WaitForSeconds(waittime);
 
-        Dealer.GetComponent<Dealer>().GetHideCard();       
+        Dealer.GetComponent<Dealer>().GetHideCard();
+
+        SoundManager.Instance.PlaySound(SoundManager.SoundType.Button, "card_dealing");
 
         //yield return StartCoroutine(WaitPoint());
 
@@ -233,7 +237,7 @@ public class GameManager : MonoBehaviour
         //{
         //    GameManager.Instance.StandButton();
         //}
-        
+
     }
 
     //private void StartBlackJack() //기본 세팅
@@ -271,24 +275,24 @@ public class GameManager : MonoBehaviour
         UIManager.Instance.ButtonControl();
 
         if (Who == who.Player)
-        {            
-            UIManager.Instance.ResultUI("LOSE!");
+        {
+            UIManager.Instance.ResultUI("LOSE");
 
             UIManager.Instance.ShowDialog(3);
 
-            ResultMoney(who.Dealer);           
+            ResultMoney(who.Dealer);
         }
         else
         {
-            UIManager.Instance.ResultUI("WIN!");
+            UIManager.Instance.ResultUI("WIN");
 
             UIManager.Instance.ShowDialog(4);
 
-            ResultMoney(who.Player);           
+            ResultMoney(who.Player);
         }
 
         GameManager.Instance.MovePoint();
-    }   
+    }
 
     public void HitButton()
     {
@@ -325,11 +329,17 @@ public class GameManager : MonoBehaviour
         GS = GameState.Resulting;
 
         UIManager.Instance.ButtonControl();
-        //비교를 위해 임시
-        //etc) 서로 빼서 계산하는 방법도 구현(01.06)
-        int Temp = BlackJackNum - Player.GetComponent<Player>().Score;
-        int Dest = BlackJackNum - Dealer.GetComponent<Dealer>().Score;
 
+        int playerscore = Player.GetComponent<Player>().Score;
+        int dealerscore = Dealer.GetComponent<Dealer>().Score;
+
+        //비교를 위해 임시
+        //etc) 서로 빼서 계산하는 방법도 구현(01.06) - 완료
+        int Temp = BlackJackNum - playerscore;
+        int Dest = BlackJackNum - dealerscore;
+
+        #region 계산 첫번째
+        /*
         if (Dest < 0)
         {
             Dest *= -1;
@@ -361,21 +371,48 @@ public class GameManager : MonoBehaviour
 
             //ResultMoney("Draw");
         }
+        */
+        #endregion
+
+        #region 계산 두번째
+
+        int result = playerscore - dealerscore;
+
+        //양수면 플레이어 win
+        //음수면 딜러 win
+        //0 이면 draw
+
+        if (result > 0)
+        {
+            UIManager.Instance.ResultUI("WIN");
+
+            UIManager.Instance.ShowDialog(4);
+
+            ResultMoney(who.Player);
+        }
+        else if (result < 0)
+        {
+            UIManager.Instance.ResultUI("LOSE");
+
+            UIManager.Instance.ShowDialog(3);
+
+            ResultMoney(who.Dealer);
+        }
+        else
+        {
+            UIManager.Instance.ResultUI("DRAW");
+
+            playermoney += BettingMoney;
+
+            PlayerPrefs.SetFloat("Money", playermoney);
+        }
+
+        #endregion
     }
 
 
     private void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.R))
-        {
-            GameReset();
-
-            UIManager.Instance.Result.SetActive(false);
-
-            UIManager.Instance.UI_Active("NPCSelect", true);
-
-            UIManager.Instance.UI_Active("Play", false);
-        }
+    {       
 
         if (Input.GetKeyDown(KeyCode.Delete))
         {
@@ -422,7 +459,7 @@ public class GameManager : MonoBehaviour
         UIManager.Instance.BetRange.text = "( " + npcdata[dataindex]["minbet"].ToString() + " - " + npcdata[dataindex]["maxbet"].ToString() + " )";
     }
 
-    //수정(01.06)
+    //수정(01.06) - 완료
     public void MoneyBetting()
     {
         string str = UIManager.Instance.BetInput.text;
@@ -456,7 +493,7 @@ public class GameManager : MonoBehaviour
     }
 
     public void ResultMoney(who who)
-    {    
+    {
 
         if (who == who.Player)
         {
@@ -470,35 +507,39 @@ public class GameManager : MonoBehaviour
             PlayerPrefs.SetFloat("Money", playermoney);
 
             npcmoney -= BettingMoney;
-           
+
         }
         else if (who == who.Dealer)
         {
             npcmoney += BettingMoney;
-        }        
+        }
 
 
         //NPC 오링
         if (npcmoney <= 0)
         {
-            UIManager.Instance.UI_Active("Play", false);
+            UIManager.Instance.UI_Active(UIManager.UI_NAME.NPCSelect);
+
+            //UIManager.Instance.UI_Active("Play", false);
 
             GameReset();
 
             UIManager.Instance.Result.SetActive(false);
 
-            UIManager.Instance.UI_Active("NPCSelect", true);            
+            //UIManager.Instance.UI_Active("NPCSelect", true);
         }
 
         if (playermoney <= 0)
         {
             playermoney = 0;
 
-            PlayerPrefs.SetFloat("Money", playermoney);           
+            PlayerPrefs.SetFloat("Money", playermoney);
 
             UIManager.Instance.Result.SetActive(false);
 
-            UIManager.Instance.UI_Active("Charge", true);
+            UIManager.Instance.Charge.SetActive(true);
+
+            //UIManager.Instance.UI_Active("Charge", true);
         }
 
     }
@@ -513,11 +554,16 @@ public class GameManager : MonoBehaviour
 
         GameReset();
 
-        UIManager.Instance.UI_Active("Play", false);
+        //UIManager.Instance.UI_Active("Play", false);
 
-        UIManager.Instance.UI_Active("Charge", false);       
+        //UIManager.Instance.UI_Active("Charge", false);
 
-        UIManager.Instance.UI_Active("NPCSelect", true);
+        //UIManager.Instance.UI_Active("NPCSelect", true);
+
+        UIManager.Instance.Charge.SetActive(false);
+
+        UIManager.Instance.UI_Active(UIManager.UI_NAME.NPCSelect);
+
     }
 
 

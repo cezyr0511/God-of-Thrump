@@ -13,11 +13,14 @@ public class CreateNPC : MonoBehaviour
 
         npcname.text = name;       
 
-        char p = '.';
+        //char p = '.';
 
-        string[] str = imgname.Split(p); //.jpg Â©¶óÁÖ±â
+        //string[] str = imgname.Split(p); //.jpg Â©¶óÁÖ±â
 
-        GetComponent<Image>().sprite = UIManager.Instance.FineNPCImg(str[0]);       
+        //GetComponent<Image>().sprite = UIManager.Instance.FineNPCImg(str[0]);       
+
+        GetComponent<Image>().sprite = UIManager.Instance.FineNPCImg(DataManager.GetData(GameManager.Instance.Npcdata, id, "image"));       
+
     }
-    
+
 }

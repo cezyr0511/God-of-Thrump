@@ -25,14 +25,15 @@ public class UIManager : MonoBehaviour
 
     [Header("Result")]
     public GameObject Result = null;
-    public Text ResultText = null;
+    public GameObject ResultButton = null;
+    public Sprite[] ResultImage;
 
     [Header("Button")]
-    public Button HitButtons = null;
-    public Button StandButtons = null;
-    public Button MinButtons = null;
-    public Button MaxButtons = null;
-    public Button BetButtons = null;
+    public Button HitButton = null;
+    public Button StandButton = null;
+    public Button MinButton = null;
+    public Button MaxButton = null;
+    public Button BetButton = null;
 
     [Header("Bet")]
     public InputField BetInput = null;
@@ -49,8 +50,21 @@ public class UIManager : MonoBehaviour
     public Text NPC_Money = null;
 
     List<Image> Npcimages;
+    
+    [Space]
+    [SerializeField]
+    private GameObject[] Uiobjects = null;
 
     GameManager GM = null;
+
+    public enum UI_NAME
+    {
+        PlayerSelect,
+        NPCSelect,
+        Play,
+        Result,
+        Charge
+    }
 
     private void Awake()
     {
@@ -63,6 +77,8 @@ public class UIManager : MonoBehaviour
         NPCImage = Resources.LoadAll<Sprite>("UI/stage/");
         PlayerImage = Resources.LoadAll<Sprite>("UI/player/");
 
+        Uiobjects = GameObject.FindGameObjectsWithTag("UI");
+
         if (GM == null)
         {
             GM = GameManager.Instance;
@@ -70,11 +86,19 @@ public class UIManager : MonoBehaviour
 
         if (PlayerPrefs.GetInt("First") == TRUE)
         {
-            UI_Active("PlayerSelect", true);
+            //UI_Active("PlayerSelect", true);
+
+            //UI_Active("PlayerSelect");
+
+            UI_Active(UI_NAME.PlayerSelect);
         }
         else
         {
-            UI_Active("NPCSelect", true);
+            //UI_Active("NPCSelect", true);
+
+            //UI_Active("NPCSelect");
+
+            UI_Active(UI_NAME.NPCSelect);
         }
     }
 
@@ -85,7 +109,7 @@ public class UIManager : MonoBehaviour
         {
             PlayerSelect.SetActive(active);
 
-            CreatePlayerSelect();
+            //CreatePlayerSelect();
         }
         else if (UI_Name == "NPCSelect")
         {
@@ -95,8 +119,12 @@ public class UIManager : MonoBehaviour
             {
                 CreateNPCSelect();
             }
+            else
+            {
+                //SoundManager.Instance.PlaySound(SoundManager.SoundType.BGM);
+            }
 
-            //StageCheck();
+            StageCheck();
         }
         else if (UI_Name == "Play")
         {
@@ -105,6 +133,8 @@ public class UIManager : MonoBehaviour
             ResetGameUI();
 
             Play.SetActive(active);
+
+            SoundManager.Instance.StopSound(SoundManager.SoundType.BGM);
 
             ShowPlayerImg();
             //ShowBalance();
@@ -119,10 +149,54 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    //public void UI_Active<T>()
-    //{
-        
-    //}
+    public void UI_Active(string UI_Name)
+    {
+        for (int i = 0; i < Uiobjects.Length; i++)
+        {
+            if (string.Compare(Uiobjects[i].name, UI_Name, true) == 0)
+            {
+                Uiobjects[i].SetActive(true);
+            }
+            else
+            {
+                Uiobjects[i].SetActive(false);
+            }
+        }
+    }
+
+    public void UI_Active(UI_NAME _NAME)
+    {
+        UI_Active(_NAME.ToString());
+
+        switch (_NAME)
+        {          
+            case UI_NAME.NPCSelect:
+
+                if (GameObject.Find("Canvas").transform.Find("NPCSelect").Find("Viewport").Find("Content").gameObject.transform.childCount == 0)
+                {
+                    CreateNPCSelect();
+                }
+
+                StageCheck();
+
+                break;
+            case UI_NAME.Play:
+
+                GM.MoneySetting(GM.Npcid);
+
+                ResetGameUI();
+
+                SoundManager.Instance.StopSound(SoundManager.SoundType.BGM);
+
+                ShowPlayerImg();
+
+                GM.GS = GameManager.GameState.Betting;
+
+                ButtonControl();
+
+                break;
+        }              
+    }
 
     private int PlayerCardCount = 0;
     private int DealerCardCount = 0;
@@ -211,9 +285,24 @@ public class UIManager : MonoBehaviour
 
     public void ResultUI(string GameResult)
     {
+        if (string.Compare(GameResult, "Win", true) == 0)
+        {
+            ResultButton.GetComponent<Image>().sprite = ResultImage[0];
+        }
+        else if (string.Compare(GameResult, "LOSE", true) == 0)
+        {
+            ResultButton.GetComponent<Image>().sprite = ResultImage[1];
+        }
+        else
+        {
+            ResultButton.GetComponent<Image>().sprite = null;
+        }
+
         Result.SetActive(true);
 
-        ResultText.text = GameResult;
+        SoundManager.Instance.PlaySound(SoundManager.SoundType.Button, "win");
+
+        //ResultText.text = GameResult;
     }
 
     //GMGR이동 (01.06) - 완료
@@ -239,13 +328,16 @@ public class UIManager : MonoBehaviour
     {
         int Num = 0;
 
+        string findimagename = id.PadLeft(3, '0') + "_s";
+
         for (int i = 0; i < PlayerImage.Length; i++)
         {
-            if (PlayerImage[i].name == id)
+            if (PlayerImage[i].name == findimagename)
             {
-                Num = int.Parse(id);
-
-                break;
+                if (int.TryParse(id, out Num))
+                {
+                    break;
+                }               
             }          
         }
 
@@ -277,34 +369,34 @@ public class UIManager : MonoBehaviour
     {
         if (GM.GS == GameManager.GameState.Betting)
         {
-            HitButtons.interactable = false;
-            StandButtons.interactable = false;
-            MinButtons.interactable = true;
-            MaxButtons.interactable = true;
-            BetButtons.interactable = false;
+            HitButton.interactable = false;
+            StandButton.interactable = false;
+            MinButton.interactable = true;
+            MaxButton.interactable = true;
+            BetButton.interactable = false;
 
         }
         else if (GM.GS == GameManager.GameState.Playing)
         {
-            HitButtons.interactable = true;
-            StandButtons.interactable = true;
-            MinButtons.interactable = false;
-            MaxButtons.interactable = false;
-            BetButtons.interactable = false;
+            HitButton.interactable = true;
+            StandButton.interactable = true;
+            MinButton.interactable = false;
+            MaxButton.interactable = false;
+            BetButton.interactable = false;
         }
         else if (GM.GS == GameManager.GameState.Resulting)
         {
-            HitButtons.interactable = false;
-            StandButtons.interactable = false;
-            MinButtons.interactable = false;
-            MaxButtons.interactable = false;
-            BetButtons.interactable = false;
+            HitButton.interactable = false;
+            StandButton.interactable = false;
+            MinButton.interactable = false;
+            MaxButton.interactable = false;
+            BetButton.interactable = false;
         }
     }
 
     public void InputMoney()
     {
-        BetButtons.interactable = true;
+        BetButton.interactable = true;
     }
 
     public void CreatePlayerSelect()
@@ -336,7 +428,7 @@ public class UIManager : MonoBehaviour
 
         GameObject obj = Resources.Load<GameObject>("Prefab/NPCButton");
 
-        GameObject Content = GameObject.Find("Canvas").transform.Find("NPC_Scroll_View").Find("Viewport").Find("Content").gameObject;
+        GameObject Content = GameObject.Find("Canvas").transform.Find("NPCSelect").Find("Viewport").Find("Content").gameObject;
 
         for (int i = 0; i < DataCount; i++)
         {
@@ -389,7 +481,7 @@ public class UIManager : MonoBehaviour
     {
         var havemoney = PlayerPrefs.GetFloat("Money");
 
-        GameObject Content = GameObject.Find("Canvas").transform.Find("NPC_Scroll_View").Find("Viewport").Find("Content").gameObject;
+        GameObject Content = GameObject.Find("Canvas").transform.Find("NPCSelect").Find("Viewport").Find("Content").gameObject;
 
         for (int i = 0; i < Content.transform.childCount; i++)
         {

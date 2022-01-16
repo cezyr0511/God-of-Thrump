@@ -12,7 +12,6 @@ public class CreatePlayer : MonoBehaviour
         gameObject.name = id.ToString();
 
         PlayerName.sprite = UIManager.Instance.FinePlayerImg(id.ToString());
-    }  
+    }
 
-    
 }

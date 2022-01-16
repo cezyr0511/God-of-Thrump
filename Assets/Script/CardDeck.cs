@@ -92,6 +92,8 @@ public class CardDeck : MonoBehaviour
         CardNumber = card[CardDeckNum].Number;
 
         CardDeckNum++;
+
+        SoundManager.Instance.PlaySound(SoundManager.SoundType.Button, "card_dealing");
     }
 
     public void ResetDeck()
