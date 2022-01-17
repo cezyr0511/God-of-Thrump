@@ -14,4 +14,5 @@ public class CreatePlayer : MonoBehaviour
         PlayerName.sprite = UIManager.Instance.FinePlayerImg(id.ToString());
     }
 
+
 }

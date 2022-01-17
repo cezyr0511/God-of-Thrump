@@ -47,6 +47,7 @@ public class CalculateScore
                 Score -= 10;
             }
         }
+        // A가 두장 이상일때 계산 다시.
 
 
         if (Score > 21)

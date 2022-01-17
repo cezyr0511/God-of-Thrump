@@ -115,7 +115,7 @@ public class GameManager : MonoBehaviour
             GameObject.Find("Canvas").transform.Find("MY_Money").GetComponent<Text>().text = PlayerPrefs.GetFloat("Money").ToString();
 
             playerid = PlayerPrefs.GetInt("PlayerId");
-        }
+        }       
 
     }
 
@@ -493,7 +493,7 @@ public class GameManager : MonoBehaviour
     }
 
     public void ResultMoney(who who)
-    {
+    {       
 
         if (who == who.Player)
         {
@@ -566,5 +566,14 @@ public class GameManager : MonoBehaviour
 
     }
 
+    //object
+
+    //pawn
+
+    //actor
+
+    //character
+
+    //character a = new character();
 
 }
